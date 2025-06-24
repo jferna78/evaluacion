@@ -1,0 +1,39 @@
+name: CI/CD para Videoclub DevOps
+
+on:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  build:
+    name: Construir y Probar
+    runs-on: ubuntu-latest
+    steps:
+    - name: Clonar el repositorio
+      uses: actions/checkout@v3
+    - name: Configurar Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '22'
+        cache: 'npm'
+    - name: Instalar dependencias
+      run: npm ci
+
+  deploy-to-dockerhub:
+    name: Desplegar en DockerHub
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+    - name: Clonar el repositorio
+      uses: actions/checkout@v3
+    - name: Iniciar sesión en DockerHub
+      uses: docker/login-action@v2
+      with:
+        username: ${{ secrets.DOCKERHUB_USERNAME }}
+        password: ${{ secrets.DOCKERHUB_TOKEN }}
+    - name: Construir y subir imagen a DockerHub
+      uses: docker/build-push-action@v4
+      with:
+        context: .
+        push: true
+        tags: ${{ secrets.DOCKERHUB_USERNAME }}/evaluacion:latest
